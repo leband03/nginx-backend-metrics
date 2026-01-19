@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <title>Observability Demo</title>
+  <style>
+    body { font-family: sans-serif; max-width: 760px; margin: 40px auto; }
+    button { padding: 10px 14px; margin: 6px 6px 6px 0; cursor: pointer; }
+    pre { background: #111; color: #0f0; padding: 12px; border-radius: 8px; overflow: auto; }
+    .row { margin: 10px 0; }
+  </style>
+</head>
+<body>
+  <h1>Observability Demo</h1>
+
+  <div class="row">
+    <button onclick="call('/api/hello')">/api/hello</button>
+    <button onclick="call('/health')">/health</button>
+    <button onclick="call('/api/error')">Сделать ошибку (500)</button>
+  </div>
+
+  <div class="row">
+    <button onclick="call('/api/slow?ms=300')">Медленный запрос 300ms</button>
+    <button onclick="call('/api/slow?ms=1000')">Медленный запрос 1000ms</button>
+  </div>
+
+  <div class="row">
+    <button onclick="burst(50)">Нагрузка: 50 запросов</button>
+    <button onclick="burst(200)">Нагрузка: 200 запросов</button>
+  </div>
+
+  <p>
+    Логи: смотри в Grafana → Explore → Loki (или <code>docker logs app</code>, <code>docker logs nginx</code>)<br/>
+    Метрики: Prometheus/Grafana по <code>http_requests_total</code>, <code>http_request_duration_seconds</code>
+  </p>
+
+  <h3>Ответ</h3>
+  <pre id="out">Нажми кнопку…</pre>
+
+  <script>
+    const out = document.getElementById('out');
+
+    async function call(path) {
+      try {
+        const r = await fetch(path);
+        const text = await r.text();
+        out.textContent = `GET ${path}\nstatus: ${r.status}\n\n${text}`;
+      } catch (e) {
+        out.textContent = `ERROR: ${e}`;
+      }
+    }
+
+    async function burst(n) {
+      out.textContent = `Запускаю нагрузку: ${n} запросов...`;
+      const start = Date.now();
+      let ok = 0, fail = 0;
+
+      // простой параллелизм "пачками"
+      const batch = 20;
+      for (let i = 0; i < n; i += batch) {
+        const tasks = [];
+        for (let j = 0; j < batch && (i + j) < n; j++) {
+          tasks.push(fetch('/api/hello').then(r => r.ok ? ok++ : fail++).catch(()=>fail++));
+        }
+        await Promise.all(tasks);
+      }
+
+      const ms = Date.now() - start;
+      out.textContent = `Готово: ok=${ok}, fail=${fail}, time=${ms}ms\n` +
+                        `Смотри метрики RPS/latency и логи.`;
+    }
+  </script>
+</body>
+</html>
