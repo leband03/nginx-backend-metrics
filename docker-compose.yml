@@ -76,9 +76,29 @@ services:
     ports:
       - "3000:3000"
     networks: [mon]
+  
+
+  loki:
+    image: grafana/loki:k290-cc5b259
+    container_name: loki
+    restart: unless-stopped
+    ports:
+      - "3100:3100"
+    command: ["-config.file=/etc/loki/local-config.yaml"]
+    networks: [mon]
 
 
-
+  promtail:
+    image: grafana/promtail:main-e0370b1
+    container_name: promtail
+    restart: unless-stopped
+    volumes:
+      - ./promtail.yml:/etc/promtail/config.yml:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/log:/var/log:ro
+    command: ["-config.file=/etc/promtail/config.yml"]
+    depends_on: [loki]
+    networks: [mon]
   
 
 networks:
