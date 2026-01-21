@@ -1,0 +1,18 @@
+{
+	"ulid": "01KFGMW1N72A2JFN6PETHW58RG",
+	"minTime": 1768911483018,
+	"maxTime": 1768917600000,
+	"stats": {
+		"numSamples": 4642201,
+		"numFloatSamples": 4642201,
+		"numSeries": 7745,
+		"numChunks": 38454
+	},
+	"compaction": {
+		"level": 1,
+		"sources": [
+			"01KFGMW1N72A2JFN6PETHW58RG"
+		]
+	},
+	"version": 1
+}
